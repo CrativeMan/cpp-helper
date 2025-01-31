@@ -3,12 +3,44 @@
 #include <stdlib.h>
 #include <string.h>
 
+void printHelp() {
+  printf("How to use:\n");
+  printf("Generate class and header in this directory:\n");
+  printf("\tHow to run:\n");
+  printf(
+      "\033[0;33m\t\tcmk class <name_of_class> <param_1_type> <param_1_name> "
+      "<param_2_type> <param_2_name> <...>\n\033[0m");
+  printf("\tEdge cases:\n");
+  printf("\033[0;33m\t\tIf you want to pass in a special parameter like a "
+         "pointer or a const variable\n");
+  printf("\t\tput the param in \"\" like \"<param_*x_name>\" or \"const "
+         "<param_x_name>\".\n\033[0m");
+}
+
 void toUpperString(char *string) {
   char *s = string;
   while (*s) {
     *s = toupper((unsigned char)*s);
     s++;
   }
+}
+
+int createFilename(char *dest, size_t destSize, const char *baseName,
+                   const char *extension) {
+  if (!dest || !baseName || !extension)
+    return 1;
+
+  size_t nameLen = strlen(baseName);
+  size_t extLen = strlen(extension);
+
+  if (destSize < (nameLen + extLen + 1))
+    return 1;
+
+  strncpy(dest, baseName, destSize);
+  dest[destSize - 1] = '\0';
+  strncat(dest, extension, destSize - strlen(dest) - 1);
+
+  return 0;
 }
 
 int generateCppFile(int argc, char **argv) {
@@ -21,19 +53,10 @@ int generateCppFile(int argc, char **argv) {
   strcpy(upperName, name);
   toUpperString(upperName);
 
-  // create filename plus extension
-  if (sizeof(filename) < strlen(name) + 1) {
-    fprintf(stderr, "Name '%s' is to long\n", name);
+  if (createFilename(filename, sizeof(filename), name, extension) != 0) {
+    fprintf(stderr, "Failed to generate cpp file name\n");
     return 1;
   }
-  strncpy(filename, name, sizeof(filename));
-
-  if (sizeof(filename) < (strlen(filename) + strlen(extension) + 1)) {
-    fprintf(stderr, "Final size of filename to long\n");
-    return 1;
-  }
-  strncat(filename, extension, (sizeof(filename) - strlen(filename) - 1));
-  printf("Filename for main cpp file is %s\n", filename);
 
   // generate file
   FILE *file;
@@ -44,9 +67,11 @@ int generateCppFile(int argc, char **argv) {
     return 1;
   }
 
-  // write header odr violation guards
+  // include
   fprintf(file, "#include \"%s.hpp\"\n", name);
+  // constructor
   fprintf(file, "\n%s::%s(", name, name);
+  // constructor variables
   int i;
   for (i = 3; i < argc; i++) {
     if (i % 2) {
@@ -55,12 +80,18 @@ int generateCppFile(int argc, char **argv) {
       fprintf(file, i == argc - 1 ? " %s" : " %s, ", argv[i]);
     }
   }
+  // constructor asign private variables the parameters of the constructor
   fprintf(file, "){\n");
   for (i = 3; i < argc; i++) {
     if (i % 2) {
       continue;
     } else {
-      fprintf(file, "\tthis.%s = %s;\n", argv[i], argv[i]);
+      char *tmp = argv[i];
+      if (tmp[0] == '*') { // check if param name starts with * for pointers and
+                           // if so remove it
+        memmove(tmp, tmp + 1, strlen(tmp));
+      }
+      fprintf(file, "\tthis->%s = %s;\n", argv[i], argv[i]);
     }
   }
   fprintf(file, "}");
@@ -82,18 +113,10 @@ int generateHeaderFile(int argc, char **argv) {
   toUpperString(upperName);
 
   // create filename plus extension
-  if (sizeof(filename) < strlen(name) + 1) {
-    fprintf(stderr, "Name '%s' is to long\n", name);
+  if (createFilename(filename, sizeof(filename), name, extension) != 0) {
+    fprintf(stderr, "Failed to generate hpp file name\n");
     return 1;
   }
-  strncpy(filename, name, sizeof(filename));
-
-  if (sizeof(filename) < (strlen(filename) + strlen(extension) + 1)) {
-    fprintf(stderr, "Final size of filename to long\n");
-    return 1;
-  }
-  strncat(filename, extension, (sizeof(filename) - strlen(filename) - 1));
-  printf("Filename for header is %s\n", filename);
 
   // generate file
   FILE *file;
@@ -106,11 +129,20 @@ int generateHeaderFile(int argc, char **argv) {
 
   // write header odr violation guards
   fprintf(file, "#ifndef %s_HPP\n#define %s_HPP", upperName, upperName);
+  // write class definition
   fprintf(file, "\n\nclass %s {\npublic:\n", name);
-  fprintf(file, "\t%s();\n", name);
-  fprintf(file, "private:\n");
-
+  fprintf(file, "\t%s(", name);
   int i;
+  for (i = 3; i < argc; i++) {
+    if (i % 2) {
+      fprintf(file, "%s", argv[i]);
+    } else {
+      fprintf(file, i == argc - 1 ? " %s" : " %s, ", argv[i]);
+    }
+  }
+  fprintf(file, ");\nprivate:\n");
+
+  // write private args
   for (i = 3; i < argc; i++) {
     if (i % 2) {
       fprintf(file, "\t%s", argv[i]);
@@ -119,6 +151,7 @@ int generateHeaderFile(int argc, char **argv) {
     }
   }
 
+  // end if of odr violation guard
   fprintf(file, "};\n\n#endif //%s_HPP", upperName);
 
   fclose(file);
@@ -139,7 +172,11 @@ void parseCommandLineArgs(int argc, char **argv) {
     if (!strcmp(argv[1], "class") && argc % 2) {
       generateHeaderFile(argc, argv);
       generateCppFile(argc, argv);
+    } else {
+      printHelp();
     }
+  } else {
+    printHelp();
   }
 }
 
