@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -pedantic -std=c99
-LDFLAGS = 
+LDFLAGS =
 SRCDIR = src
 OBJDIR = obj
 TARGETDIR = bin
@@ -26,6 +26,9 @@ clean:
 	rm -f $(OBJS) $(TARGET)
 	rm -rf $(OBJDIR)
 	rm -rf $(TARGETDIR)
+	rm -rf header/*
+	rm *.cpp
+	rm *.hpp
 
 run:
 	./bin/main
