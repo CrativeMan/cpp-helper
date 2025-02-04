@@ -95,12 +95,15 @@ int writeHeaderFile(FILE *file, char *name, char *upperName, int argc,
   fprintf(file, "#ifndef %s_HPP\n#define %s_HPP", upperName, upperName);
   // write class definition
   fprintf(file, "\n\nclass %s {\npublic:\n", name);
+  // write class constructor
   fprintf(file, "\t%s(", name);
   int i;
   for (i = 3; i < argc; i++) {
-    if (i % 2) {
+    if (i % 2) { // check if is type or name
+      // write arguments type
       fprintf(file, "%s", argv[i]);
     } else {
+      // write arguments name, check if is last, if not put comma
       fprintf(file, i == argc - 1 ? " %s" : " %s, ", argv[i]);
     }
   }
@@ -108,10 +111,10 @@ int writeHeaderFile(FILE *file, char *name, char *upperName, int argc,
 
   // write private args
   for (i = 3; i < argc; i++) {
-    if (i % 2) {
-      fprintf(file, "\t%s", argv[i]);
+    if (i % 2) { // check if is type or name
+      fprintf(file, "\t%s", argv[i]); // write type
     } else {
-      fprintf(file, " %s;\n", argv[i]);
+      fprintf(file, " %s;\n", argv[i]); // write name
     }
   }
 
@@ -145,7 +148,7 @@ int generateCppFile(int argc, char **argv, bool inFolder) {
     return 1;
   }
 
-  // include
+  // include if inFolder write folder name
   inFolder ? fprintf(file, "#include \"%s/%s.hpp\"\n", folderName, name)
            : fprintf(file, "#include \"%s.hpp\"\n", name);
 
