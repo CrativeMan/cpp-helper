@@ -10,6 +10,8 @@ TARGETMAIN = $(TARGETDIR)/cmk
 
 all: $(TARGETMAIN)
 
+build: $(TARGETMAIN)
+
 $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
