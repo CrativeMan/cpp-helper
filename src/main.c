@@ -18,6 +18,16 @@ void printHelp() {
          "pointer or a const variable\n");
   printf("\t\tput the param in \"\" like \"<param_*x_name>\" or \"const "
          "<param_x_name>\".\n\033[0m");
+  printf("Generate class and header in 'header' directory:\n");
+  printf("\tHow to run:\n");
+  printf(
+      "\033[0;33m\t\tcmk folder <name_of_class> <param_1_type> <param_1_name> "
+      "<param_2_type> <param_2_name> <...>\n\033[0m");
+  printf("\tEdge cases:\n");
+  printf("\033[0;33m\t\tIf you want to pass in a special parameter like a "
+         "pointer or a const variable\n");
+  printf("\t\tput the param in \"\" like \"<param_*x_name>\" or \"const "
+         "<param_x_name>\".\n\033[0m");
 }
 
 /*
